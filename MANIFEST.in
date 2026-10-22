@@ -1,0 +1,6 @@
+include LICENSE README.md
+recursive-include tests *.py
+recursive-include examples *.py
+recursive-include standalone *.py *.md *.txt
+recursive-include model_cards *.md
+global-exclude __pycache__ *.py[cod] .DS_Store

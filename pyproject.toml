@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chessds-dsc"
+version = "0.1.0"
+description = "Inference package and UCI engine for the ChessDS DSC human chess move-prediction models"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Albert W. Hamood" }]
+keywords = ["chess", "move prediction", "human play", "uci", "chessformer"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Games/Entertainment :: Board Games",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "chess>=1.9",
+  "numpy>=1.24",
+  "safetensors>=0.4",
+  "torch>=2.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://chessds.com/"
+Weights = "https://huggingface.co/ChessDS"
+Repository = "https://github.com/ChessDS/chessds-dsc"
+
+[project.scripts]
+dsc-uci = "chessds_dsc.uci:main"
+dsc-cache = "chessds_dsc.cache_cli:main"
+dsc-23m = "chessds_dsc.uci:main_23m"
+dsc-23m-fen = "chessds_dsc.uci:main_23m_fen"
+dsc-79m = "chessds_dsc.uci:main_79m"
+dsc-79m-fen = "chessds_dsc.uci:main_79m_fen"
+dsc-150m = "chessds_dsc.uci:main_150m"
+dsc-150m-fen = "chessds_dsc.uci:main_150m_fen"
+
+[tool.setuptools.packages.find]
+include = ["chessds_dsc*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
