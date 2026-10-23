@@ -30,7 +30,7 @@ ChessDS's full result and move-prediction models combine neural outputs with Sto
 
 ## Install and quickstart
 
-[Standalone UCI downloads](https://github.com/ChessDS/chessds-dsc/releases/tag/v0.1.0-rc1) are available for Windows x64, Linux x64, Apple silicon Mac and Intel Mac. Each includes one model and its runtime; extract the whole folder and select its named executable in your chess GUI. No separate Python installation is required. Mac users: run the one-line [first-run step](https://github.com/ChessDS/chessds-dsc/blob/main/standalone/MACOS_FIRST_RUN.md) that clears Apple's download quarantine for the extracted folder before adding the engine.
+[Standalone UCI downloads](https://github.com/ChessDS/chessds-dsc/releases/tag/v0.1.0-rc1) are available for Windows x64, Linux x64, Apple silicon Mac and Intel Mac. Each includes one model and its runtime; extract the whole folder and select its named executable in your chess GUI. No separate Python installation is required. Mac users: before adding the engine, run the one Terminal line on the [first-run page](https://github.com/ChessDS/chessds-dsc/blob/main/standalone/MACOS_FIRST_RUN.md); it clears Apple's download quarantine for the extracted folder and starts the engine once.
 
 For the Python API, install from GitHub while PyPI publication is pending:
 
