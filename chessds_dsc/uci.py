@@ -66,7 +66,7 @@ from .predictor import (
     PositionInput,
     Prediction,
 )
-from .registry import format_model_list, resolve
+from .registry import MODELS, format_model_list, resolve
 from .sampling import select_move
 
 ENGINE_NAME = "ChessDS DSC"
@@ -244,22 +244,31 @@ class Engine:
                 force_download=a.force_download,
             )
             variant = "FEN" if self.dsc.mode == "strict" else "main"
-            self.log(f"{self.dsc.model_id} ready ({variant}, {self.dsc.device})")
+            self.log(f"{self._name()} ready ({variant}, {self.dsc.device})")
         return self.dsc
 
     def _name(self) -> str:
         if self.dsc is not None:
-            return f"{ENGINE_NAME} {self.dsc.model_id}"
-        if self.args.checkpoint_path:
+            model_id = self.dsc.model_id
+        elif self.args.checkpoint_path:
             path = Path(self.args.checkpoint_path)
             if path.is_dir():
                 found = sorted(path.glob("*.safetensors"))
                 path = found[0] if len(found) == 1 else path
             try:
-                return f"{ENGINE_NAME} {read_config(path)['model_id']}"
+                model_id = read_config(path)["model_id"]
             except (OSError, ValueError, KeyError):
-                return f"{ENGINE_NAME} {path.stem}"
-        return f"{ENGINE_NAME} {self.args.model}"
+                model_id = path.stem
+        else:
+            model_id = self.args.model
+        # Checkpoint identities retain their version; the GUI uses the public name.
+        for entry in MODELS:
+            if model_id == entry.weights.removesuffix(".safetensors"):
+                return entry.repo_name
+        try:
+            return resolve(model_id).repo_name
+        except KeyError:
+            return f"{ENGINE_NAME} {model_id}"
 
     # ── prediction ──────────────────────────────────────────────────────────
 
@@ -353,7 +362,7 @@ class Engine:
             source = "from the move list" if i.repetition_source == "move_stack" else "as given"
             repetition = f"position {seen[tuple(i.repetition)]} ({source})"
         return (
-            f"{self.dsc.model_id}: P = probability that the player to move plays the move "
+            f"{self._name()}: P = probability that the player to move plays the move "
             f"(a prediction of human choice, not an evaluation); White {white:g}, Black "
             f"{black:g}, {i.time_control}, {i.rating_system} ratings; {i.history_boards} "
             f"previous positions; {repetition}; move played: temperature {self.temperature:g}, "

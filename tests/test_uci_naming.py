@@ -25,7 +25,7 @@ def test_alias_uci_identity_is_canonical_before_loading(model_id, alias, monkeyp
     engine = uci.Engine(args)
     engine.cmd_uci()
     lines = capsys.readouterr().out.splitlines()
-    assert lines[0] == f"id name ChessDS DSC {model_id}"
+    assert lines[0] == f"id name {resolve(model_id).repo_name}"
     assert lines[-1] == "uciok"
     assert engine.dsc is None
 
@@ -53,7 +53,7 @@ def test_model_listing_uses_only_canonical_names_and_main_fen_labels():
 
 
 @pytest.mark.parametrize("entry", MODELS, ids=[entry.id for entry in MODELS])
-def test_ready_log_uses_public_variant_and_loaded_id_keeps_artifact_version(
+def test_loaded_engine_displays_public_name_and_preserves_artifact_identity(
     entry, monkeypatch, capsys
 ):
     artifact_id = entry.weights.removesuffix(".safetensors")
@@ -72,9 +72,10 @@ def test_ready_log_uses_public_variant_and_loaded_id_keeps_artifact_version(
     engine.cmd_uci()
     captured = capsys.readouterr()
     label = "FEN" if entry.mode == "strict" else "main"
-    assert f"{artifact_id} ready ({label}, cpu)" in captured.err.splitlines()
+    assert f"{entry.repo_name} ready ({label}, cpu)" in captured.err.splitlines()
+    assert fake_model.model_id == artifact_id
     assert "strict" not in captured.err
-    assert captured.out.splitlines()[0] == f"id name ChessDS DSC {artifact_id}"
+    assert captured.out.splitlines()[0] == f"id name {entry.repo_name}"
 
 
 @pytest.mark.parametrize("checkpoint", [None, "local-experiment.safetensors"])
@@ -85,3 +86,19 @@ def test_unknown_custom_model_name_is_preserved(checkpoint):
     parsed = uci.parse_args(args)
     assert parsed.model == "local-experiment"
     assert parsed.checkpoint_path == checkpoint
+
+
+@pytest.mark.parametrize("entry", MODELS, ids=[entry.id for entry in MODELS])
+def test_checkpoint_identity_uses_public_name_before_loading(entry, monkeypatch, capsys):
+    artifact_id = entry.weights.removesuffix(".safetensors")
+    monkeypatch.setattr(uci, "read_config", lambda path: {"model_id": artifact_id})
+    engine = uci.Engine(uci.parse_args(["--checkpoint-path", entry.weights]))
+    engine.cmd_uci()
+    assert capsys.readouterr().out.splitlines()[0] == f"id name {entry.repo_name}"
+    assert engine.dsc is None
+
+
+def test_custom_checkpoint_keeps_its_own_identity(monkeypatch):
+    monkeypatch.setattr(uci, "read_config", lambda path: {"model_id": "my-study-v2"})
+    engine = uci.Engine(uci.parse_args(["--checkpoint-path", "custom.safetensors"]))
+    assert engine._name() == "ChessDS DSC my-study-v2"

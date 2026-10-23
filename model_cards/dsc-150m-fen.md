@@ -17,7 +17,7 @@ This FEN model is trained for single-position input and never uses previous posi
 | Config | `dsc-150m-fen-v1.json`; sha256 `c0d3462dbd6ade150ed81c9556329ce8218050eb2fe06c34b4a9062b8d3f1944` |
 | Architecture | 16 layers, width 1024, 32 attention heads; 150,907,206 parameters |
 
-FEN models are trained to predict from a single board position. Their name comes from FEN (Forsyth–Edwards Notation), the format used to describe that position. They use the position, side to move, castling rights, en passant square and halfmove clock, plus the players' ratings and game context you supply and, optionally, whether the position has occurred before, which a FEN does not record. They never use previous positions. Omitted ratings default to 2578 each; omitted game context defaults to classical and FIDE.
+FEN models are trained to predict from a single board position. Their name comes from FEN (Forsyth–Edwards Notation), the format used to describe that position. They use the position, side to move, castling rights, en passant square and halfmove clock, plus the players' ratings and game context you supply and, optionally, whether the position has occurred before, which a FEN does not record. They never use previous positions. Omitted ratings default to 2578 for each player, the average rating in the GM-level classical fine-tuning set. Omitted game context defaults to classical and FIDE.
 
 All variants share these defaults. Repetition flags come from a complete move stack or explicit `repetition=(seen_once_before, seen_twice_before)`. Without either, repetition is treated as absent. Ratings, time control and rating system can be supplied independently; venue is derived from the rating system.
 

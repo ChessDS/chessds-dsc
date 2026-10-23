@@ -63,7 +63,7 @@ move = select_move(pred.moves, temperature=0.8, top_p=0.95)
 | [DSC-150M](https://github.com/ChessDS/chessds-dsc/blob/main/model_cards/dsc-150m.md) | `dsc-150m` | 150.9M | up to 7 | 604 MB |
 | [DSC-150M-FEN](https://github.com/ChessDS/chessds-dsc/blob/main/model_cards/dsc-150m-fen.md) | `dsc-150m-fen` | 150.9M | none | 604 MB |
 
-FEN models are trained to predict from a single board position. Their name comes from FEN (Forsyth–Edwards Notation), the format used to describe that position. They use the position, side to move, castling rights, en passant square and halfmove clock, plus the players' ratings and game context you supply and, optionally, whether the position has occurred before, which a FEN does not record. They never use previous positions. Omitted ratings default to 2578 each; omitted game context defaults to classical and FIDE.
+FEN models are trained to predict from a single board position. Their name comes from FEN (Forsyth–Edwards Notation), the format used to describe that position. They use the position, side to move, castling rights, en passant square and halfmove clock, plus the players' ratings and game context you supply and, optionally, whether the position has occurred before, which a FEN does not record. They never use previous positions. Omitted ratings default to 2578 for each player, the average rating in the GM-level classical fine-tuning set. Omitted game context defaults to classical and FIDE.
 The main and FEN variants have separately trained weights. Model-id aliases (`-h`, `-history`, `-s`, `-strict`, and bare sizes such as `23m`) remain; the FEN variant's API `mode` is `strict`.
 
 ## Inputs and history
