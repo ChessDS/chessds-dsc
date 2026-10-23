@@ -43,7 +43,7 @@ The eval91 scores of DSC-23M and the Maia-3 eval91 references were computed in f
 
 ## Usage
 
-Install: `pip install chessds-dsc`. Downloads are cached and sha256-verified.
+Install from GitHub while PyPI publication is pending: `pip install "git+https://github.com/ChessDS/chessds-dsc.git@v0.1.0-rc1"`. Model downloads are cached and sha256-verified. [Standalone UCI downloads](https://github.com/ChessDS/chessds-dsc/releases/tag/v0.1.0-rc1) include the runtime and model.
 
 ```python
 import chess

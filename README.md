@@ -30,8 +30,12 @@ ChessDS's full result and move-prediction models combine neural outputs with Sto
 
 ## Install and quickstart
 
+[Standalone UCI downloads](https://github.com/ChessDS/chessds-dsc/releases/tag/v0.1.0-rc1) are available for Windows x64, Linux x64, Apple silicon Mac and Intel Mac. Each includes one model and its runtime; extract the whole folder and select its named executable in your chess GUI. No separate Python installation is required.
+
+For the Python API, install from GitHub while PyPI publication is pending:
+
 ```bash
-pip install chessds-dsc
+pip install "git+https://github.com/ChessDS/chessds-dsc.git@v0.1.0-rc1"
 ```
 
 Requires Python 3.10+, PyTorch 2.1+, python-chess, numpy and safetensors. CPU, CUDA and Apple MPS are supported; pass `device="cpu"` to `DSC.load` to select CPU.
@@ -101,7 +105,7 @@ For example, `dsc-23m --temperature 0.8 --top-p 0.95 --seed 42` enables sampling
 ## In a chess GUI
 
 Set the engine command to an installed preset such as `dsc-150m` or `dsc-79m-fen`, or to `dsc-uci` with `--model dsc-150m --use-uci-history`. On macOS/Linux, `which dsc-150m` gives the path; on Windows, look in the Python environment's `Scripts` folder.
-Run `dsc-cache --model dsc-150m` before the first game; otherwise the GUI waits for the initial download. Set `Elo`, `SelfElo`, `OppoElo`, `TimeControl`, `RatingSystem`, `OutputMode`, `Temperature`, `TopP` and `MultiPV` in the engine options. Python is required; there are no standalone builds. Checked in Nibbler and HIARCS Chess Explorer on macOS; Windows is untested.
+Run `dsc-cache --model dsc-150m` before the first game; otherwise the GUI waits for the initial download. Set `Elo`, `SelfElo`, `OppoElo`, `TimeControl`, `RatingSystem`, `OutputMode`, `Temperature`, `TopP` and `MultiPV` in the engine options. These commands are for the Python package. Standalone downloads include their runtime and model. All four platform packages passed extracted-engine UCI checks; consumer-machine GUI checks remain. Mac packages are ad-hoc signed and unnotarized, and Windows packages are unsigned.
 
 ## Coming from Maia-3
 
@@ -127,4 +131,4 @@ Cite Daniel Monroe, George Eilender, Philip Chalmers, Zhenwei Tang and Ashton An
 
 - Evaluated on classical games at 2400+; not evaluated below 2400 or on other time controls.
 - The raw WDL head is an auxiliary training output. Do not rely on it as a standalone game-result forecast; in our 23M tests it was less accurate than dedicated result models.
-- macOS arm64 and Linux x86_64 CPU checks passed (Linux used the same tensor bytes with candidate names). Windows, Linux arm64, Python 3.10 and package inference on CUDA/MPS remain untested.
+- Standalone CPU checks passed on macOS arm64, Windows x64 and Linux x64; Intel Mac passed under Rosetta. Physical Intel Mac, consumer-machine GUI launch, Linux arm64, Python 3.10 and package inference on CUDA/MPS remain untested.
