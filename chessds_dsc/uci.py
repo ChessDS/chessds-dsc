@@ -49,25 +49,29 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import chess
-import numpy as np
-import torch
 
-from . import encoding as enc
-from .checkpoint import read_config
-from .predictor import (
+from .constants import (
     DEFAULT_ELO,
     DEFAULT_RATING_SYSTEM,
     DEFAULT_TIME_CONTROL,
-    DSC,
-    PositionInput,
-    Prediction,
+    RATING_SYSTEMS,
+    TIME_CONTROLS,
 )
 from .registry import MODELS, format_model_list, resolve
-from .sampling import select_move
+
+if TYPE_CHECKING:
+    from .predictor import DSC, PositionInput, Prediction
+
+# torch, numpy and safetensors are imported only when the model is needed (``ensure_loaded``),
+# never at import time: ``uci`` and ``isready`` are answered from the standard library and
+# python-chess alone. On a computer that runs the engine for the first time, loading the
+# inference libraries can take 10-20 s, longer than chess GUIs wait for ``uciok``.
 
 ENGINE_NAME = "ChessDS DSC"
 ENGINE_AUTHOR = "Albert W. Hamood (ChessDS)"
@@ -140,8 +144,8 @@ def parse_args(argv=None) -> argparse.Namespace:
         action="store_true",
         help="rebuild the previous positions from 'position ... moves' (history models)",
     )
-    p.add_argument("--time-control", default=DEFAULT_TIME_CONTROL, choices=enc.TIME_CONTROLS)
-    p.add_argument("--rating-system", default=DEFAULT_RATING_SYSTEM, choices=enc.RATING_SYSTEMS)
+    p.add_argument("--time-control", default=DEFAULT_TIME_CONTROL, choices=TIME_CONTROLS)
+    p.add_argument("--rating-system", default=DEFAULT_RATING_SYSTEM, choices=RATING_SYSTEMS)
     p.add_argument("--cache-dir", default=None, help="where downloaded models are stored")
     p.add_argument(
         "--base-url", default=None, help="download location (overrides CHESSDS_DSC_BASE_URL)"
@@ -169,6 +173,8 @@ def percent(p: float) -> str:
     value = 100.0 * float(p)
     if value >= 0.01:
         return f"{value:.2f}"
+    import numpy as np
+
     return np.format_float_positional(value, precision=2, fractional=False, trim="-")
 
 
@@ -211,8 +217,9 @@ class Engine:
         self.output_mode = args.output_mode
         self.forward_calls = 0  # network calls (predict_batch) and positions evaluated
         self.forward_positions = 0
-        self.rng = np.random.default_rng(args.seed)
-        torch.manual_seed(args.seed)
+        self.rng = None  # numpy Generator, created with the model (numpy is imported then)
+        self._load_lock = threading.Lock()
+        self._preload: threading.Thread | None = None
         self.pending_bestmove: str | None = None
         self.pending_search = False
         self.out = sys.stdout
@@ -230,26 +237,64 @@ class Engine:
     # ── model ───────────────────────────────────────────────────────────────
 
     def ensure_loaded(self) -> DSC:
-        if self.dsc is None:
-            a = self.args
-            what = a.checkpoint_path or a.model
-            self.log(f"loading DSC model {what}")
-            self.dsc = DSC.load(
-                a.model or DEFAULT_MODEL,
-                checkpoint_path=a.checkpoint_path,
-                device=a.device,
-                cache_dir=a.cache_dir,
-                base_url=a.base_url,
-                local_files_only=a.local_files_only,
-                force_download=a.force_download,
-            )
-            variant = "FEN" if self.dsc.mode == "strict" else "main"
-            self.log(f"{self._name()} ready ({variant}, {self.dsc.device})")
-        return self.dsc
+        """The loaded model; loads it (importing torch) on first use.
+
+        Serialised with the background preload started by ``start_preload``: a ``go`` that
+        arrives while the preload is running waits for it instead of loading twice.
+        """
+        with self._load_lock:
+            if self.dsc is None:
+                import numpy as np
+                import torch
+
+                from .predictor import DSC
+
+                a = self.args
+                what = a.checkpoint_path or a.model
+                self.log(f"loading DSC model {what}")
+                self.rng = np.random.default_rng(a.seed)
+                torch.manual_seed(a.seed)
+                self.dsc = DSC.load(
+                    a.model or DEFAULT_MODEL,
+                    checkpoint_path=a.checkpoint_path,
+                    device=a.device,
+                    cache_dir=a.cache_dir,
+                    base_url=a.base_url,
+                    local_files_only=a.local_files_only,
+                    force_download=a.force_download,
+                )
+                variant = "FEN" if self.dsc.mode == "strict" else "main"
+                self.log(f"{self._name()} ready ({variant}, {self.dsc.device})")
+            return self.dsc
+
+    def start_preload(self) -> None:
+        """Load the model in a background thread; idempotent.
+
+        Called after the handshake replies (``readyok``, or the first ``position``) rather than
+        at start-up: loading the inference libraries holds the interpreter lock while the
+        operating system checks each library, which would delay ``uciok`` and ``readyok`` on a
+        first launch. Errors are left for the first command that needs the model, which loads
+        again and reports them on the normal path.
+        """
+        if self._preload is not None or self.dsc is not None:
+            return
+
+        def preload() -> None:
+            try:
+                self.ensure_loaded()
+            except Exception:  # noqa: BLE001 - reported by the foreground load
+                return
+
+        self._preload = threading.Thread(target=preload, name="dsc-preload", daemon=True)
+        self._preload.start()
 
     def _name(self) -> str:
         if self.dsc is not None:
             model_id = self.dsc.model_id
+        elif self.args.model is not None and self._registered(self.args.model):
+            # A registered model (the standalone engines pass both --model and the local
+            # weights) is named without opening the weights, which would import torch.
+            model_id = self.args.model
         elif self.args.checkpoint_path:
             path = Path(self.args.checkpoint_path)
             if path.is_dir():
@@ -270,9 +315,19 @@ class Engine:
         except KeyError:
             return f"{ENGINE_NAME} {model_id}"
 
+    @staticmethod
+    def _registered(model_id: str) -> bool:
+        try:
+            resolve(model_id)
+        except KeyError:
+            return False
+        return True
+
     # ── prediction ──────────────────────────────────────────────────────────
 
     def _input(self, board: chess.Board) -> PositionInput:
+        from .predictor import PositionInput
+
         white_elo, black_elo = (
             (self.self_elo, self.oppo_elo)
             if self.board.turn == chess.WHITE
@@ -303,7 +358,14 @@ class Engine:
         moves rescaled to sum to one. The candidates' auxiliary WDL is computed only in the modes
         that show it.
         """
+        if self.dsc is None and self._preload is not None and self._preload.is_alive():
+            self.log(
+                f"{self._name()}: waiting for the model to finish loading (the first launch "
+                "on a computer can take 10-20 seconds)"
+            )
         self.ensure_loaded()
+        from .sampling import select_move
+
         if self.board.is_game_over() or not any(self.board.legal_moves):
             return None
         pred = self._predict([self._input(self.board)])[0]
@@ -427,9 +489,9 @@ class Engine:
         self.send(f"option name Temperature type string default {self.args.temperature}")
         self.send(f"option name TopP type string default {self.args.top_p}")
         self.send(f"option name MultiPV type spin default {self.multipv} min 1 max {MAX_MULTIPV}")
-        tcs = " ".join(f"var {t}" for t in enc.TIME_CONTROLS)
+        tcs = " ".join(f"var {t}" for t in TIME_CONTROLS)
         self.send(f"option name TimeControl type combo default {self.time_control} {tcs}")
-        rss = " ".join(f"var {r}" for r in enc.RATING_SYSTEMS)
+        rss = " ".join(f"var {r}" for r in RATING_SYSTEMS)
         self.send(f"option name RatingSystem type combo default {self.rating_system} {rss}")
         modes = " ".join(f"var {m}" for m in OUTPUT_MODES)
         self.send(f"option name OutputMode type combo default {self.output_mode} {modes}")
@@ -456,9 +518,9 @@ class Engine:
                 self.top_p = float(value)
             elif name == "multipv":
                 self.multipv = self._clamp_multipv(value)
-            elif name == "timecontrol" and value in enc.TIME_CONTROLS:
+            elif name == "timecontrol" and value in TIME_CONTROLS:
                 self.time_control = value
-            elif name == "ratingsystem" and value in enc.RATING_SYSTEMS:
+            elif name == "ratingsystem" and value in RATING_SYSTEMS:
                 self.rating_system = value
             elif name == "outputmode" and value in OUTPUT_MODES:
                 self.output_mode = value
@@ -545,11 +607,14 @@ class Engine:
             if line == "uci":
                 self.cmd_uci()
             elif line == "isready":
-                self.ensure_loaded()
+                # Answered at once, as the protocol asks; the first go waits for the model.
                 self.send("readyok")
+                self.start_preload()
             elif line == "ucinewgame":
+                self.start_preload()
                 self.cmd_ucinewgame()
             elif head == "position":
+                self.start_preload()
                 self.cmd_position(line)
             elif head == "go":
                 self.cmd_go(line)
@@ -559,6 +624,22 @@ class Engine:
                 self.cmd_stop()
             elif line == "quit":
                 return
+
+
+def read_config(weights_path, config_path=None) -> dict:
+    """The checkpoint's configuration (imports torch on first use; see ``checkpoint``)."""
+    from .checkpoint import read_config as _read_config
+
+    return _read_config(weights_path, config_path)
+
+
+def __getattr__(name: str):
+    # ``uci.DSC`` stays available for callers and tests without importing torch up front.
+    if name == "DSC":
+        from .predictor import DSC
+
+        return DSC
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def main(argv=None) -> None:

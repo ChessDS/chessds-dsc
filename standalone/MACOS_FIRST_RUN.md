@@ -1,18 +1,17 @@
 # Opening a DSC engine on macOS
 
-These downloads are not Apple-notarized. Only override macOS checks for a download you trust. Keep the entire extracted folder together.
+These downloads are not Apple-notarized, so macOS blocks them until you allow the download yourself. Only do this for a download you trust. Keep the entire extracted folder together.
 
-1. Extract the ZIP. Open Terminal (Applications → Utilities → Terminal).
-2. Type `xattr -dr com.apple.quarantine`, add a space, then drag the **whole extracted folder** from Finder into Terminal. Press Return. This clears download quarantine only for that folder and its contents; it does not turn off Gatekeeper globally.
-3. Run the engine once before adding it to a chess GUI. Type the following, add a space after the pipe, then drag the **named executable inside the folder** (for example `dsc-79m-fen`) into Terminal and press Return:
+1. Extract the ZIP (double-click it in Downloads).
+2. Open Terminal (Applications → Utilities → Terminal), paste the line below with your folder's name, and press Return:
 
    ```sh
-   printf 'uci\nisready\nquit\n' |
+   xattr -dr com.apple.quarantine ~/Downloads/dsc-150m-0.1.0-macos-arm64
    ```
 
-   Wait for `uciok`, then `readyok`, and for the Terminal prompt to return. The first launch can be slow: one tested Mac took about 18 seconds. A GUI may report “not a valid engine” if it times out during that initial launch.
-4. In HIARCS, open Preferences → Engines → Add and select that same named executable. The ZIP and the enclosing folder are not engine executables.
+   This clears the download quarantine for that folder only; it does not change any system setting. Without it macOS stops the engine once for the executable and again for each library it loads.
+3. In your chess GUI (HIARCS: Preferences → Engines → Add), select the named executable inside the folder, for example `dsc-150m`. The ZIP and the folder itself are not engines.
 
-Verified on 2026-10-22 with the public DSC-79M-FEN Apple silicon download: the ZIP matched the published checksum; clearing quarantine allowed UCI startup and a legal move; HIARCS then accepted the engine as DSC-79M-FEN.
+The engine identifies itself to the GUI immediately. The first time it analyses on a computer, macOS checks the bundled libraries, which takes about 10 to 20 seconds before the first moves appear; every later start takes under a second. If your GUI still reports that the engine is not valid, check that step 2 ran on the extracted folder and not on the ZIP.
 
-Apple also provides [System Settings → Privacy & Security → Open Anyway](https://support.apple.com/en-us/102445) after an attempted launch. The folder-level procedure above covers the bundled runtime libraries as well as the executable.
+Apple also offers [System Settings → Privacy & Security → Open Anyway](https://support.apple.com/en-us/102445) after a blocked launch, but that approval covers one file at a time; the folder-level command above covers the bundled runtime libraries as well as the executable.

@@ -1,6 +1,6 @@
 # ChessDS DSC
 
-DSC is a family of neural networks that predict human chess moves, with a focus on master and grandmaster play. It independently reimplements and extends Chessformer, the architecture used by Maia-3, adding inputs for game context and available history. The models are trained on high-rated games and fine-tuned on classical over-the-board play, assigning a probability to every legal move from the position, ratings and game context.
+DSC is a family of neural networks that predict human chess moves, with a focus on master and grandmaster play. It independently reimplements and extends Chessformer, the architecture introduced by the Maia-3 team of Monroe, Eilender, Chalmers, Tang and Anderson ([paper](https://arxiv.org/abs/2605.19091), [code](https://github.com/CSSLab/maia3)), adding inputs for game context and available history. The models are trained on high-rated games and fine-tuned on classical over-the-board play, assigning a probability to every legal move from the position, ratings and game context.
 
 On 81,939 held-out classical games between players rated 2400+, DSC-150M predicts the move played 62.74% of the time, with the played move among its top three predictions 89.63% of the time, using recorded ratings and game history.
 
@@ -11,7 +11,7 @@ Code: [ChessDS/chessds-dsc](https://github.com/ChessDS/chessds-dsc). Weights: [H
 
 ## Accuracy
 
-Every move of eval91: 81,939 held-out classical over-the-board games between players rated 2400+, with recorded ratings. Main models receive history; FEN models do not. Maia-3 79M uses its released weights on the same moves and inputs.
+Every move of eval91: 81,939 held-out classical over-the-board games between players rated 2400+, with recorded ratings. Main models receive history; FEN models do not. Maia-3 79M uses its released weights ([UofTCSSLab/Maia3-79M](https://huggingface.co/UofTCSSLab/Maia3-79M)) on the same moves and inputs.
 
 | Model | History | Top-1 | Top-3 | Log loss |
 |---|---|---:|---:|---:|
@@ -30,7 +30,7 @@ ChessDS's full result and move-prediction models combine neural outputs with Sto
 
 ## Install and quickstart
 
-[Standalone UCI downloads](https://github.com/ChessDS/chessds-dsc/releases/tag/v0.1.0-rc1) are available for Windows x64, Linux x64, Apple silicon Mac and Intel Mac. Each includes one model and its runtime; extract the whole folder and select its named executable in your chess GUI. No separate Python installation is required. Mac users: follow the [first-run instructions](https://github.com/ChessDS/chessds-dsc/blob/main/standalone/MACOS_FIRST_RUN.md) if Apple blocks the engine or the GUI reports “not a valid engine”.
+[Standalone UCI downloads](https://github.com/ChessDS/chessds-dsc/releases/tag/v0.1.0-rc1) are available for Windows x64, Linux x64, Apple silicon Mac and Intel Mac. Each includes one model and its runtime; extract the whole folder and select its named executable in your chess GUI. No separate Python installation is required. Mac users: run the one-line [first-run step](https://github.com/ChessDS/chessds-dsc/blob/main/standalone/MACOS_FIRST_RUN.md) that clears Apple's download quarantine for the extracted folder before adding the engine.
 
 For the Python API, install from GitHub while PyPI publication is pending:
 
@@ -120,12 +120,34 @@ For a history-free Maia-3 setup, use a FEN model. For history, use a main preset
 | `maia3-uci --device cpu` | `dsc-uci --device cpu` |
 | `maia3-cache --model maia3-23m` | `dsc-cache --model dsc-23m-fen` (or `dsc-23m` for history) |
 
-## Licences and citation
+## Licences, attribution and citation
 
 Code: [GPL-3.0-or-later](https://github.com/ChessDS/chessds-dsc/blob/main/LICENSE), including when distributed in combination with python-chess, which uses the same licence. Redistribution must meet the GPL's terms, including its corresponding-source requirements; installing a dependency with pip does not remove those obligations.
 Weights: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), with attribution to Albert W. Hamood / ChessDS, a licence link and an indication of changes. The weights can be used independently of this package.
-DSC independently reimplements and extends the Chessformer architecture with inputs for time control, rating system, venue and history availability. It was trained on Lichess games (2200+, CC0) and The Week in Chess, then fine-tuned on classical over-the-board games. No Maia-3 code, weights or outputs were used to build or train DSC; Maia-3 was run only for the comparison results.
-Cite Daniel Monroe, George Eilender, Philip Chalmers, Zhenwei Tang and Ashton Anderson, *Chessformer: A Unified Architecture for Chess Modeling*, ICLR 2026, arXiv:2605.19091; and Albert W. Hamood, *DSC: Human Chess Move Prediction Models*, ChessDS, 2026, [chessds.com](https://chessds.com/).
+DSC independently reimplements and extends the Chessformer architecture, introduced by Maia-3 ([paper](https://arxiv.org/abs/2605.19091), [code](https://github.com/CSSLab/maia3), [models](https://huggingface.co/collections/MaiaChess/maia3), [maiachess.com](https://maiachess.com)), with inputs for time control, rating system, venue and history availability. It was trained on Lichess games (2200+, CC0) and The Week in Chess, then fine-tuned on classical over-the-board games. No Maia-3 code, weights or outputs were used to build or train DSC. The released Maia-3 weights were run only to produce the comparison rows; the Maia-3 code (AGPL-3.0) is neither included in nor required by this package.
+
+If you use DSC, please cite the Chessformer paper, as its authors ask, and DSC:
+
+```bibtex
+@inproceedings{monroe2026chessformer,
+title={Chessformer: A Unified Architecture for Chess Modeling},
+author={Daniel Monroe and George Eilender and Philip Chalmers and Zhenwei Tang and Ashton Anderson},
+booktitle={The Fourteenth International Conference on Learning Representations},
+year={2026},
+url={https://openreview.net/forum?id=2ltBRzEHyd}
+}
+```
+
+```bibtex
+@misc{hamood2026dsc,
+title={DSC: Human Chess Move Prediction Models},
+author={Albert W. Hamood},
+year={2026},
+publisher={ChessDS},
+howpublished={\url{https://chessds.com/}},
+note={Weights: \url{https://huggingface.co/ChessDS}; code: \url{https://github.com/ChessDS/chessds-dsc}}
+}
+```
 
 ## Limitations
 

@@ -394,7 +394,15 @@ attribution Albert W. Hamood / ChessDS. Editable source is in source/;
 third-party notices and versions are in third_party_licenses/.
 """
     if tag.startswith("macos"):
-        text += "\nThis macOS build is ad-hoc signed and not notarized. macOS may require your permission to open it.\n"
+        text += (
+            "\nThis macOS build is ad-hoc signed and not notarized, so macOS blocks it until you\n"
+            "clear the download quarantine for this folder. Open Terminal and run, with this\n"
+            "folder's path:\n"
+            "    xattr -dr com.apple.quarantine /path/to/this/folder\n"
+            "Then add the engine in your GUI. The first analysis on a computer starts after a\n"
+            "10-20 second check of the bundled libraries; later starts take under a second.\n"
+            "Details: source/chessds-dsc/standalone/MACOS_FIRST_RUN.md\n"
+        )
     elif tag.startswith("windows"):
         text += (
             "\nThis Windows build is unsigned. Windows may require your permission to open it.\n"

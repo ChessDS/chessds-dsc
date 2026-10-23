@@ -23,7 +23,6 @@ string) in its metadata, so a weights file alone is still loadable. Loading neve
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 
@@ -31,18 +30,11 @@ import torch
 from safetensors.torch import load_file, save_file
 
 from .encoding import ENCODING_VERSION
+from .hashing import sha256_file
 from .model import DSCConfig, DSCModel, count_parameters
 
 FORMAT = "chessds-dsc-v1"
 MODES = ("history", "strict")
-
-
-def sha256_file(path: str | Path) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for block in iter(lambda: f.read(1 << 20), b""):
-            h.update(block)
-    return h.hexdigest()
 
 
 def config_path_for(weights_path: str | Path) -> Path:

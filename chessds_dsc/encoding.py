@@ -63,11 +63,11 @@ N_TIME_CONTROLS = len(TIME_CONTROL_CODES)
 N_RATING_SYSTEMS = len(RATING_SYSTEM_CODES)
 N_VENUES = len(VENUE_CODES)
 
-# The values the public API accepts: every code that occurred in training. "correspondence"
-# and the "unknown" codes have embedding rows but never occurred, so they are not offered.
-TIME_CONTROLS = ("bullet", "blitz", "rapid", "classical")
-RATING_SYSTEMS = ("fide", "lichess", "other")
-VENUES = ("otb", "online")
+# The values the public API accepts (see constants.py): every code that occurred in training.
+from .constants import RATING_SYSTEMS as RATING_SYSTEMS  # noqa: E402
+from .constants import TIME_CONTROLS as TIME_CONTROLS  # noqa: E402
+from .constants import VENUES as VENUES  # noqa: E402
+
 # In the training data the venue was fully determined by the rating system.
 VENUE_FOR_RATING_SYSTEM = {"fide": "otb", "lichess": "online", "other": "online"}
 

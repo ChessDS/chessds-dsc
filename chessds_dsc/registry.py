@@ -18,15 +18,11 @@ this registry. Any weights file in the DSC format can still be loaded from a loc
 from __future__ import annotations
 
 import os
-import shutil
 import sys
-import tempfile
-import urllib.error
-import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-from .checkpoint import sha256_file
+from .hashing import sha256_file
 
 ENV_BASE_URL = "CHESSDS_DSC_BASE_URL"
 ENV_CACHE = "CHESSDS_DSC_CACHE"
@@ -202,6 +198,11 @@ def file_url(entry: ModelEntry, name: str, base_url_: str | None = None) -> str:
 
 
 def _download(url: str, dest: Path, expected_sha256: str) -> None:
+    # Imported here: the UCI engine must start without the network and compression modules.
+    import shutil
+    import tempfile
+    import urllib.request
+
     dest.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(prefix=dest.name + ".", suffix=".part", dir=dest.parent)
     tmp = Path(tmp_name)
@@ -233,6 +234,8 @@ def fetch(
     A cached file whose hash does not match the registry is re-downloaded (or rejected with
     ``local_files_only``).
     """
+    import urllib.error
+
     log = log or (lambda msg: print(msg, file=sys.stderr, flush=True))
     directory = cache_dir(cache_dir_) / entry.id
     paths = []

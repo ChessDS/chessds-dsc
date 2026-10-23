@@ -18,12 +18,42 @@ The command-line UCI engine is ``dsc-uci``; see the README.
 
 from __future__ import annotations
 
-from .checkpoint import load_model, save_model
-from .model import DSCConfig, DSCModel
-from .predictor import DEFAULT_ELO, DSC, WDL, PositionInput, Prediction, ResolvedInputs
+import importlib
+
+from .constants import DEFAULT_ELO
 from .registry import MODELS, ModelEntry, resolve
 
 __version__ = "0.1.0"
+
+# torch is imported only when one of these names is first used, so that ``dsc-uci`` and the
+# standalone engines answer ``uci`` immediately (a chess GUI's start-up limit is a few seconds,
+# and the first launch of the inference libraries on a computer can take much longer).
+_LAZY = {
+    "load_model": ".checkpoint",
+    "save_model": ".checkpoint",
+    "DSCConfig": ".model",
+    "DSCModel": ".model",
+    "DSC": ".predictor",
+    "WDL": ".predictor",
+    "PositionInput": ".predictor",
+    "Prediction": ".predictor",
+    "ResolvedInputs": ".predictor",
+}
+
+
+def __getattr__(name: str):
+    try:
+        module = _LAZY[name]
+    except KeyError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    value = getattr(importlib.import_module(module, __name__), name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(_LAZY))
+
 
 __all__ = [
     "DEFAULT_ELO",

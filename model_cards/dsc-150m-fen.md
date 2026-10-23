@@ -6,7 +6,7 @@ tags: [chess, move-prediction, human-behavior, safetensors]
 
 # DSC-150M-FEN
 
-DSC-150M-FEN is a neural model that predicts human chess moves, with a focus on master and grandmaster play. It independently reimplements and extends Chessformer, the architecture used by Maia-3, with additional inputs for game context. Trained on high-rated games and fine-tuned on classical over-the-board play, it assigns a probability to every legal move from the position, ratings and game context.
+DSC-150M-FEN is a neural model that predicts human chess moves, with a focus on master and grandmaster play. It independently reimplements and extends Chessformer, the architecture introduced by the Maia-3 team of Monroe, Eilender, Chalmers, Tang and Anderson ([paper](https://arxiv.org/abs/2605.19091), [code](https://github.com/CSSLab/maia3)), with additional inputs for game context. Trained on high-rated games and fine-tuned on classical over-the-board play, it assigns a probability to every legal move from the position, ratings and game context.
 
 This FEN model is trained for single-position input and never uses previous positions. The main model `dsc-150m` accepts up to 7 previous positions. DSC-150M-FEN also returns auxiliary win / draw / loss probabilities for the side to move.
 
@@ -69,6 +69,29 @@ ChessDS's full result and move-prediction models combine neural outputs with Sto
 
 Weights: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), attribution Albert W. Hamood / ChessDS. [Inference code](https://github.com/ChessDS/chessds-dsc): GPL-3.0-or-later, including its python-chess dependency.
 
-Cite Monroe, Eilender, Chalmers, Tang and Anderson, *Chessformer: A Unified Architecture for Chess Modeling*, ICLR 2026, arXiv:2605.19091; and Albert W. Hamood, *DSC: Human Chess Move Prediction Models*, ChessDS, 2026, [chessds.com](https://chessds.com/).
+No Maia-3 code, weights or outputs were used in developing or training this model. The released Maia-3 weights ([UofTCSSLab/Maia3-79M](https://huggingface.co/UofTCSSLab/Maia3-79M), [Maia3-23M](https://huggingface.co/UofTCSSLab/Maia3-23M)) were run only for the comparison rows; the Maia-3 code (AGPL-3.0) is neither included in nor required by the inference package.
 
-No Maia-3 code, weights or outputs were used in developing or training this model. Maia-3 was run only for the comparison rows.
+## Citation
+
+DSC builds on the Chessformer architecture introduced by Maia-3 ([paper](https://arxiv.org/abs/2605.19091), [code](https://github.com/CSSLab/maia3), [models](https://huggingface.co/collections/MaiaChess/maia3), [maiachess.com](https://maiachess.com)). If you use this model, please cite the Chessformer paper, as its authors ask, and DSC:
+
+```bibtex
+@inproceedings{monroe2026chessformer,
+title={Chessformer: A Unified Architecture for Chess Modeling},
+author={Daniel Monroe and George Eilender and Philip Chalmers and Zhenwei Tang and Ashton Anderson},
+booktitle={The Fourteenth International Conference on Learning Representations},
+year={2026},
+url={https://openreview.net/forum?id=2ltBRzEHyd}
+}
+```
+
+```bibtex
+@misc{hamood2026dsc,
+title={DSC: Human Chess Move Prediction Models},
+author={Albert W. Hamood},
+year={2026},
+publisher={ChessDS},
+howpublished={\url{https://chessds.com/}},
+note={Weights: \url{https://huggingface.co/ChessDS}; code: \url{https://github.com/ChessDS/chessds-dsc}}
+}
+```

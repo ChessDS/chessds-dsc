@@ -38,12 +38,11 @@ import torch
 
 from . import encoding as enc
 from .checkpoint import load_model
+from .constants import DEFAULT_ELO as DEFAULT_ELO
+from .constants import DEFAULT_RATING_SYSTEM as DEFAULT_RATING_SYSTEM
+from .constants import DEFAULT_TIME_CONTROL as DEFAULT_TIME_CONTROL
 from .model import DSCModel
 from .registry import fetch, resolve
-
-DEFAULT_ELO = 2578.0
-DEFAULT_TIME_CONTROL = "classical"
-DEFAULT_RATING_SYSTEM = "fide"
 
 
 class WDL(NamedTuple):
